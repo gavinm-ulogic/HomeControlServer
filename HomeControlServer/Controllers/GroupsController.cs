@@ -11,7 +11,7 @@ namespace HomeControlServer.Controllers
 {
     public class GroupsController : ApiController
     {
-        public IEnumerable<EventGroup> GetAllEvents()
+        public IEnumerable<EventGroup> GetAllGroups()
         {
             return HeatingControl.groups;
         }

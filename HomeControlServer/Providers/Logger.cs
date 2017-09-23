@@ -8,7 +8,10 @@ namespace HomeControlServer.Providers
 {
     public static class Logger
     {
-        private const string LOGFILE = @"c:\temp\millcontrol_log.txt";
+        private const string LOGFILE_STEM = @"c:\temp\homecontrol_log";
+        private const string LOGFILE_EXT = @".txt";
+        private const string LOGFILE = LOGFILE_STEM + LOGFILE_EXT;
+        private const int MAXSIZE = 1000000;
 
         public const int LOGLEVEL_ERROR = 1;
         private const string LOGLEVEL_ERROR_STR = "ERROR";
@@ -17,6 +20,17 @@ namespace HomeControlServer.Providers
         public const int LOGLEVEL_INFO = 3;
         private const string LOGLEVEL_INFO_STR = "INFO";
 
+
+        public static void Init()
+        {
+            FileInfo f = new FileInfo(LOGFILE);
+            if (f.Length > MAXSIZE)
+            {
+                var timestamp = DateTime.Now.ToString("_yyyyMMdd_HHmm");
+                var moveTo = LOGFILE_STEM + @timestamp + LOGFILE_EXT;
+                File.Move(LOGFILE, moveTo);
+            }
+        }
 
         public static void Log(int logLevel, string message)
         {

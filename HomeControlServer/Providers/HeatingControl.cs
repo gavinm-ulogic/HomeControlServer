@@ -57,6 +57,8 @@ namespace HomeControlServer.Providers
             XmlSerializer deserializer = new XmlSerializer(typeof(HeatingData));
             TextReader reader = new StreamReader(@"C:\Temp\HeatingData.xml");
 
+            Logger.Init();
+            Logger.Log(Logger.LOGLEVEL_INFO, "###############################################################################################");
             Logger.Log(Logger.LOGLEVEL_INFO, "About to load init data");
             object obj = deserializer.Deserialize(reader);
             theData = (HeatingData)obj;

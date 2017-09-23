@@ -28,7 +28,15 @@ namespace HomeControlServer.Providers
             {
                 string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
                 folder = Path.GetFullPath(folder);
-                LoadLibrary(Path.Combine(folder, "vjsnativ.dll"));
+                var dllFile = Path.Combine(folder, "vjsnativ.dll");
+                var loadResult = LoadLibrary(dllFile);
+                if (loadResult == IntPtr.Zero)
+                {
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load DLL: " + dllFile);
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "1 wire sensors will not work!");
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
+                }
             }
 
             Thread oWorker = null;
