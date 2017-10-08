@@ -72,9 +72,6 @@ namespace HomeControlServer.Providers
                 {
                     if (room.id == heater.roomId)
                     {
-                        //heater.tempMin = room.tempMin;
-                        //heater.tempMax = room.tempMax;
-                        //heater.tempTarget = room.tempTarget;
                         room.heaters.Add(heater);
                         break;
                     }
@@ -100,24 +97,7 @@ namespace HomeControlServer.Providers
 
             foreach (TimedEvent timedEvent in events)
             {
-                //switch (timedEvent.subjectId)
-                //{
-                //    case 3301:
-                //    case 3302:
-                //    case 3303:
-                //    case 2301:
-                //    case 1301:
-                //        timedEvent.action = "timed";
-                //        break;
-                //    default:
-                //        timedEvent.action = "target";
-                //        break;
-                //}
-
-                //timedEvent.id = m_iNextEventId;
-                //m_iNextEventId++;
-
-            timedEvent.subjectType = "heater";
+                timedEvent.subjectType = "heater";
             }
 
             // Clear and then populate relay set
@@ -183,7 +163,7 @@ namespace HomeControlServer.Providers
             return null;
         }
 
-        public static void AddEvent(TimedEvent timedEvent)
+        public static TimedEvent AddEvent(TimedEvent timedEvent)
         {
             if (timedEvent.id == 0)
             {
@@ -193,25 +173,30 @@ namespace HomeControlServer.Providers
             else if (timedEvent.id > highestEventId) highestEventId = timedEvent.id;
 
             events.Add(timedEvent);
+            return timedEvent;
         }
 
-        public static void UpdateEvent(TimedEvent timedEvent)
+        public static TimedEvent UpdateEvent(TimedEvent timedEvent)
         {
             if (timedEvent.id != 0)
             {
                 if (timedEvent.id > highestEventId) highestEventId = timedEvent.id;
                 TimedEvent anEvent = GetEventById(timedEvent.id);
                 if (anEvent != null) anEvent.setData(timedEvent);
+                return timedEvent;
             }
+            return null;
         }
 
-        public static void DeleteEvent(int timedEventId)
+        public static bool DeleteEvent(int timedEventId)
         {
             if (timedEventId != 0)
             {
                 TimedEvent anEvent = GetEventById(timedEventId);
                 if (anEvent != null) events.Remove(anEvent);
+                return true;
             }
+            return false;
         }
 
         public static List<TimedEvent> getHeaterEvents(int heaterId)
