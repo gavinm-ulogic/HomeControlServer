@@ -1,7 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
-using System.IO.Ports;
-using System.Threading;
+﻿using System;
 using System.Timers;
 
 namespace HomeControlServer.Providers

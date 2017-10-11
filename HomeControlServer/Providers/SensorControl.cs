@@ -1,12 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using com.dalsemi.onewire;
-using com.dalsemi.onewire.adapter;
-using java.util;
 using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -18,26 +10,26 @@ namespace HomeControlServer.Providers
     {
         private const int LOOP_DELAY = 120000;
 
-        [DllImport("kernel32", SetLastError = true)]
-        static extern IntPtr LoadLibrary(string lpFileName);
+        //[DllImport("kernel32", SetLastError = true)]
+        //static extern IntPtr LoadLibrary(string lpFileName);
 
         private static bool m_bRun;
         public static void Run()
         {
-            if (Environment.Version.Major >= 4)
-            {
-                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
-                folder = Path.GetFullPath(folder);
-                var dllFile = Path.Combine(folder, "vjsnativ.dll");
-                var loadResult = LoadLibrary(dllFile);
-                if (loadResult == IntPtr.Zero)
-                {
-                    Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
-                    Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load DLL: " + dllFile);
-                    Logger.Log(Logger.LOGLEVEL_ERROR, "1 wire sensors will not work!");
-                    Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
-                }
-            }
+            //if (Environment.Version.Major >= 4)
+            //{
+            //    string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
+            //    folder = Path.GetFullPath(folder);
+            //    var dllFile = Path.Combine(folder, "vjsnativ.dll");
+            //    var loadResult = LoadLibrary(dllFile);
+            //    if (loadResult == IntPtr.Zero)
+            //    {
+            //        Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
+            //        Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load DLL: " + dllFile);
+            //        Logger.Log(Logger.LOGLEVEL_ERROR, "1 wire sensors will not work!");
+            //        Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
+            //    }
+            //}
 
             Thread oWorker = null;
             oWorker = new Thread(WorkerThread);
@@ -67,6 +59,11 @@ namespace HomeControlServer.Providers
                 }
             }
         }
+        
+        private static dynamic getEnumerator(dynamic d)
+        {
+            return d.getAllDeviceContainers();
+        }
 
         private static void PollSensors()
         {
@@ -94,7 +91,7 @@ namespace HomeControlServer.Providers
                     {
                         bFound1w = true;
                         Logger.Log(Logger.LOGLEVEL_INFO, "Found 1 wire on USB" + i.ToString());
-                        java.util.Enumeration owd_enum = default(java.util.Enumeration);
+                        //java.util.Enumeration owd_enum = default(java.util.Enumeration);
 
                         // get exclusive use of 1-Wire network
                         oAdapter.beginExclusive(true);
@@ -106,8 +103,9 @@ namespace HomeControlServer.Providers
                         //                        oAdapter.setSpeed(com.dalsemi.onewire.adapter.DSPortAdapter.SPEED_HYPERDRIVE);
 
                         // Get all device containers
-                        owd_enum = oAdapter.getAllDeviceContainers();
+                        //oAdapter.getAllDeviceContainers();
 
+                        var owd_enum = getEnumerator(oAdapter);
                         //Logger.Log(Logger.LOGLEVEL_INFO, "Enumerating devices connected to adapter " + oAdapter.getAdapterName());
 
                         // enumerate through all the 1-Wire devices found (with Java-style enumeration)

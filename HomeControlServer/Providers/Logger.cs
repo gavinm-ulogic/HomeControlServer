@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Web;
 
 namespace HomeControlServer.Providers
 {
@@ -24,7 +21,7 @@ namespace HomeControlServer.Providers
         public static void Init()
         {
             FileInfo f = new FileInfo(LOGFILE);
-            if (f.Length > MAXSIZE)
+            if (f.Exists && f.Length > MAXSIZE)
             {
                 var timestamp = DateTime.Now.ToString("_yyyyMMdd_HHmm");
                 var moveTo = LOGFILE_STEM + @timestamp + LOGFILE_EXT;
