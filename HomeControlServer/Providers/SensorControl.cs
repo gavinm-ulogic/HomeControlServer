@@ -10,26 +10,26 @@ namespace HomeControlServer.Providers
     {
         private const int LOOP_DELAY = 120000;
 
-        //[DllImport("kernel32", SetLastError = true)]
-        //static extern IntPtr LoadLibrary(string lpFileName);
+        [DllImport("kernel32", SetLastError = true)]
+        static extern IntPtr LoadLibrary(string lpFileName);
 
         private static bool m_bRun;
         public static void Run()
         {
-            //if (Environment.Version.Major >= 4)
-            //{
-            //    string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
-            //    folder = Path.GetFullPath(folder);
-            //    var dllFile = Path.Combine(folder, "vjsnativ.dll");
-            //    var loadResult = LoadLibrary(dllFile);
-            //    if (loadResult == IntPtr.Zero)
-            //    {
-            //        Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
-            //        Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load DLL: " + dllFile);
-            //        Logger.Log(Logger.LOGLEVEL_ERROR, "1 wire sensors will not work!");
-            //        Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
-            //    }
-            //}
+            if (Environment.Version.Major >= 4)
+            {
+                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
+                folder = Path.GetFullPath(folder);
+                var dllFile = Path.Combine(folder, "vjsnativ.dll");
+                var loadResult = LoadLibrary(dllFile);
+                if (loadResult == IntPtr.Zero)
+                {
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load DLL: " + dllFile);
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "1 wire sensors will not work!");
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "###############################################################################################");
+                }
+            }
 
             Thread oWorker = null;
             oWorker = new Thread(WorkerThread);
@@ -61,7 +61,7 @@ namespace HomeControlServer.Providers
         }
         
         private static dynamic getEnumerator(dynamic d)
-        {
+        { // Remove J# dependency for getting the enumerator
             return d.getAllDeviceContainers();
         }
 
