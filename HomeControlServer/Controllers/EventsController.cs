@@ -46,6 +46,11 @@ namespace HomeControlServer.Controllers
 
     public class EventsController : ApiController
     {
+        [HttpOptions]
+        [Route("api/events")]
+        [Route("api/events/{id}")]
+        public void Options() { }
+
         [HttpGet]
         [Route("api/events")]
         public IEnumerable<TimedEvent> GetAllEvents()
@@ -53,23 +58,34 @@ namespace HomeControlServer.Controllers
             return HeatingControl.events;
         }
 
+        [HttpPost]
+        [Route("api/events")]
+        public IHttpActionResult PostEvents([FromBody] TimedEvent timedEvent)
+        {
+            if (timedEvent.id > 0)
+            {
+                return PutEvents(timedEvent.id, timedEvent);
+            }
+            else
+            {
+                timedEvent = HeatingControl.AddEvent(timedEvent);
+                if (timedEvent == null)
+                {
+                    return NotFound();
+                }
+                return Ok(timedEvent);
+            }
+        }
+
+        //[HttpOptions]
+        //[Route("api/events/{id}")]
+        //public void Options2() { }
+
         [HttpGet]
         [Route("api/events/{id}")]
         public IHttpActionResult GetEvents(int id)
         {
             var timedEvent = HeatingControl.GetEventById(id);
-            if (timedEvent == null)
-            {
-                return NotFound();
-            }
-            return Ok(timedEvent);
-        }
-
-        [HttpPost]
-        [Route("api/events")]
-        public IHttpActionResult PostEvents([FromBody] TimedEvent timedEvent)
-        {
-            timedEvent = HeatingControl.AddEvent(timedEvent);
             if (timedEvent == null)
             {
                 return NotFound();
