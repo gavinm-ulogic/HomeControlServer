@@ -105,5 +105,13 @@ namespace HomeControlServer.Controllers
             localEvent.setData(timedEvent);
             return Ok(timedEvent);
         }
+
+        [HttpDelete]
+        [Route("api/events/{id}")]
+        public IHttpActionResult DeleteEvent(int id)
+        {
+            HeatingControl.DeleteEvent(id);
+            return Ok();
+        }
     }
 }
