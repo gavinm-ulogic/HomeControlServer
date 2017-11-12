@@ -5,51 +5,15 @@ using HomeControlServer.Providers;
 
 namespace HomeControlServer.Controllers
 {
-    //public class EventsController : ApiController
-    //{
-    //    public EventsController()
-    //    {
-    //    }
-
-    //    public List<TimedEvent> Get()
-    //    {
-    //        return HeatingControl.events;
-    //    }
-
-    //    public HttpResponseMessage Post(TimedEvent timedEvent)
-    //    {
-    //        HeatingControl.AddEvent(timedEvent);
-
-    //        var response = Request.CreateResponse<TimedEvent>(System.Net.HttpStatusCode.Created, timedEvent);
-
-    //        return response;
-    //    }
-
-    //    //public HttpResponseMessage Put(TimedEvent timedEvent)
-    //    //{
-    //    //    //HeatingControl.updateEvent(timedEvent);
-
-    //    //    //var response = Request.CreateResponse<TimedEvent>(System.Net.HttpStatusCode.OK, timedEvent);
-
-    //    //    //return response;
-    //    //}
-
-    //    //public HttpResponseMessage Delete(int id)
-    //    //{
-    //    //    //HeatingControl.deleteEvent(id);
-
-    //    //    //var response = Request.CreateResponse<TimedEvent>(System.Net.HttpStatusCode.OK, null);
-
-    //    //    //return response;
-    //    //}
-    //}
-
     public class EventsController : ApiController
     {
         [HttpOptions]
         [Route("api/events")]
+        public void Options1() { }
+
+        [HttpOptions]
         [Route("api/events/{id}")]
-        public void Options() { }
+        public void Options2() { }
 
         [HttpGet]
         [Route("api/events")]
@@ -76,10 +40,6 @@ namespace HomeControlServer.Controllers
                 return Ok(timedEvent);
             }
         }
-
-        //[HttpOptions]
-        //[Route("api/events/{id}")]
-        //public void Options2() { }
 
         [HttpGet]
         [Route("api/events/{id}")]
