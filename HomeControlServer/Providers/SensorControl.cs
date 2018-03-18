@@ -188,7 +188,7 @@ namespace HomeControlServer.Providers
 
             if (!bFound)
             {// really shouldn't happen !!!!!!
-                Logger.Log(Logger.LOGLEVEL_ERROR, "Missing sensor: " + p_SensorId);
+                Logger.Log(Logger.LOGLEVEL_ERROR, "Un-mapped sensor: " + p_SensorId + ", current temp: " + p_Value.ToString());
             }
         }
 

@@ -124,11 +124,11 @@ namespace HomeControlServer.Providers
 
             sensorAverage = sensorTotal / heater.sensors.Count;
             if (sensorAverage >= heater.tempMax) { return; }
-            if (timedEvent.action != "timed")
+            if (timedEvent.action == "timed")
             {
                 newState = true;
             }
-            else
+            else if (timedEvent.action == "target")
             {
                 if (sensorAverage < heater.tempTarget + m_iTempDelta)
                 {

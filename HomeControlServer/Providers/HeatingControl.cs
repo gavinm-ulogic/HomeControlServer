@@ -2,12 +2,14 @@
 using System.IO;
 using System.Xml.Serialization;
 using HomeControlServer.Models;
+using System;
 
 namespace HomeControlServer.Providers
 {
     public static class HeatingControl
     {
-        private static int m_iNextEventId = 1;
+        private const string CONTROLFILE = @"C:\Temp\HeatingData.xml";
+        private const string CONTROLFILEALT = @"C:\Temp\HeatingDataAlt.xml";
 
         public class HeatingData
         {
@@ -41,24 +43,62 @@ namespace HomeControlServer.Providers
 
         public static bool Save()
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(HeatingData));
-            using (TextWriter writer = new StreamWriter(@"C:\Temp\HeatingData.xml"))
+            try
             {
-                serializer.Serialize(writer, theData);
+                XmlSerializer serializer = new XmlSerializer(typeof(HeatingData));
+                using (TextWriter writer = new StreamWriter(CONTROLFILE))
+                {
+                    serializer.Serialize(writer, theData);
+                    writer.Close();
+                }
+
+                // check the file
+                XmlSerializer deserializer = new XmlSerializer(typeof(HeatingData));
+                using (TextReader reader = new StreamReader(CONTROLFILE))
+                {
+                    object obj = deserializer.Deserialize(reader);
+                    reader.Close();
+                }
+
+                // got this far so save the alt file
+                using (TextWriter writer = new StreamWriter(CONTROLFILEALT))
+                {
+                    serializer.Serialize(writer, theData);
+                    writer.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to save data file - " + ex.Message);
             }
             return true;
         }
         public static bool Load()
         {
-            XmlSerializer deserializer = new XmlSerializer(typeof(HeatingData));
-            TextReader reader = new StreamReader(@"C:\Temp\HeatingData.xml");
-
             Logger.Init();
             Logger.Log(Logger.LOGLEVEL_INFO, "###############################################################################################");
             Logger.Log(Logger.LOGLEVEL_INFO, "About to load init data");
-            object obj = deserializer.Deserialize(reader);
+
+            XmlSerializer deserializer = new XmlSerializer(typeof(HeatingData));
+            object obj = null;
+            try
+            {
+                using (TextReader reader = new StreamReader(CONTROLFILE))
+                {
+                    obj = deserializer.Deserialize(reader);
+                    reader.Close();
+                }
+            }
+            catch
+            {
+                Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load data file - trying alt file");
+                using (TextReader reader = new StreamReader(CONTROLFILEALT))
+                {
+                    obj = deserializer.Deserialize(reader);
+                    reader.Close();
+                }
+            }
             theData = (HeatingData)obj;
-            reader.Close();
             Logger.Log(Logger.LOGLEVEL_INFO, "Init data loaded");
 
             // Add heaters to rooms

@@ -57,7 +57,9 @@ namespace HomeControlServer.Providers
                 if (ports.Length == 0)
                 {
                     //					Interaction.MsgBox("No COM-PORT found", MsgBoxStyle.Critical);
-                    System.Environment.Exit(0);
+                    //System.Environment.Exit(0);
+                    m_bDoInitialise = true;
+                    return false;
                 }
 
                 foreach (string port_loopVariable in ports)
