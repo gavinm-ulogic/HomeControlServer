@@ -8,8 +8,10 @@ namespace HomeControlServer.Providers
 {
     public static class HeatingControl
     {
-        private const string CONTROLFILE = @"C:\Temp\HeatingData.xml";
-        private const string CONTROLFILEALT = @"C:\Temp\HeatingDataAlt.xml";
+        private const string DATADIR = @"C:\HomeControl\Data\";
+        private const string CONTROLFILE = DATADIR + @"HeatingData.xml";
+        private const string CONTROLFILEALT = DATADIR + @"HeatingDataAlt.xml";
+        private const string CONTROLFILEFALLBACK = DATADIR + @"HeatingDataFallback.xml";
 
         public class HeatingData
         {
@@ -73,6 +75,7 @@ namespace HomeControlServer.Providers
             }
             return true;
         }
+
         public static bool Load()
         {
             Logger.Init();
@@ -91,15 +94,32 @@ namespace HomeControlServer.Providers
             }
             catch
             {
-                Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load data file - trying alt file");
-                using (TextReader reader = new StreamReader(CONTROLFILEALT))
+                try
                 {
-                    obj = deserializer.Deserialize(reader);
-                    reader.Close();
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load data file - trying alt file");
+                    using (TextReader reader = new StreamReader(CONTROLFILEALT))
+                    {
+                        obj = deserializer.Deserialize(reader);
+                        reader.Close();
+                    }
+                }
+                catch
+                {
+                    Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load alt data file - trying fallback");
+                    using (TextReader reader = new StreamReader(CONTROLFILEFALLBACK))
+                    {
+                        obj = deserializer.Deserialize(reader);
+                        reader.Close();
+                    }
                 }
             }
             theData = (HeatingData)obj;
             Logger.Log(Logger.LOGLEVEL_INFO, "Init data loaded");
+
+            if (theData == null)
+            {
+                return false;
+            }
 
             // Add heaters to rooms
             foreach (Heater heater in heaters)

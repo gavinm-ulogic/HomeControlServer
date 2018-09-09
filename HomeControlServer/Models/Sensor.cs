@@ -23,6 +23,7 @@ namespace HomeControlServer.Models
         public string maxValue { get; set; }
         public System.DateTime lastChange { get; set; }
         public System.DateTime lastRead { get; set; }
+        public bool ignore { get; set; }
 
         public Sensor()
         {
@@ -32,9 +33,10 @@ namespace HomeControlServer.Models
             this.roomId = 0;
             this.sensorId = "";
             this.maxValue = "";
+            this.ignore = false;
         }
 
-        public Sensor(int id, string type, string name, int room, string owid, string maxValue)
+        public Sensor(int id, string type, string name, int room, string owid, string maxValue, bool ignore = false)
         {
             this.id = id;
             this.type = type;
@@ -42,6 +44,7 @@ namespace HomeControlServer.Models
             this.roomId = room;
             this.sensorId = owid;
             this.maxValue = maxValue;
+            this.ignore = false;
         }
 
         public int reading
@@ -49,15 +52,16 @@ namespace HomeControlServer.Models
             get { return m_iReading; }
             set
             {
-                var lastReading = m_iReading;
-                if ((m_iReading != value) && IsValid(value))
+                if (IsValid(value))
                 {
-                    m_iReading = value;
-                    lastChange = DateTime.Now;
+                    var lastReading = m_iReading;
+                    if (m_iReading != value)
+                    {
+                        m_iReading = value;
+                        lastChange = DateTime.Now;
+                    }
+                    lastRead = DateTime.Now;
                 }
-                lastRead = DateTime.Now;
-                Logger.Log(Logger.LOGLEVEL_INFO, name + " previous: " + lastReading + " new: " + 
-                    m_iReading + " read: " + lastRead.ToString("yyyyMMdd H:mm") + " changed: " + lastChange.ToString("yyyyMMdd H:mm"));
             }
         }
 

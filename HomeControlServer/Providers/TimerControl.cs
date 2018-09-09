@@ -83,33 +83,6 @@ namespace HomeControlServer.Providers
             }
         }
 
-        //public static void DoHeating()
-        //{
-        //    try
-        //    {
-        //        List<TimedEvent> eventList;
-
-        //        foreach (Heater heater in HeatingControl.heaters)
-        //        {
-        //            eventList = HeatingControl.getHeaterEvents(heater.id);
-        //            foreach (TimedEvent timedEvent in eventList)
-        //            {
-        //                if (timedEvent.IsActive(DateTime.MinValue) && !string.IsNullOrEmpty(heater.relayAddress))
-        //                {
-        //                    ProcessHeaterEvent(heater, timedEvent);
-        //                }
-
-        //            }
-        //        }
-
-        //        RelayControl.UpdateRelays();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var testVal = ex;
-        //    }
-        //}
-
         private static void ProcessHeaterEvent(Heater heater, TimedEvent timedEvent)
         {
             bool newState = false;
@@ -117,12 +90,17 @@ namespace HomeControlServer.Providers
 
             int sensorTotal = 0;
             int sensorAverage = 0;
+            int sensorCount = 0;
             foreach (Sensor sensor in heater.sensors)
             {
-                sensorTotal += sensor.reading;
+                if (!sensor.ignore)
+                {
+                    sensorTotal += sensor.reading;
+                    sensorCount++;
+                }
             }
 
-            sensorAverage = sensorTotal / heater.sensors.Count;
+            sensorAverage = sensorTotal / sensorCount;
             if (sensorAverage >= heater.tempMax) { return; }
             if (timedEvent.action == "timed")
             {

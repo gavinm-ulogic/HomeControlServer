@@ -176,18 +176,24 @@ namespace HomeControlServer.Providers
         private static void SetValue(String p_SensorId, int p_Value)
         {
             bool bFound = false;
-            for (int i = 0; i < HeatingControl.sensors.Count; i++)
+            foreach (Sensor sensor in HeatingControl.sensors)
             {
-                if (HeatingControl.sensors[i].sensorId == p_SensorId)
+                if (sensor.sensorId == p_SensorId)
                 {
-                    HeatingControl.sensors[i].reading = p_Value;
+                    if (!sensor.ignore)
+                    {
+                        var lastReading = sensor.reading;
+                        sensor.reading = p_Value;
+                        Logger.Log(Logger.LOGLEVEL_INFO, sensor.name + " previous: " + lastReading + " new: " +
+                            sensor.reading + " read: " + sensor.lastRead.ToString("yyyyMMdd H:mm") + " changed: " + sensor.lastChange.ToString("yyyyMMdd H:mm"));
+                    }
                     bFound = true;
                     break;
                 }
             }
 
             if (!bFound)
-            {// really shouldn't happen !!!!!!
+            {
                 Logger.Log(Logger.LOGLEVEL_ERROR, "Un-mapped sensor: " + p_SensorId + ", current temp: " + p_Value.ToString());
             }
         }

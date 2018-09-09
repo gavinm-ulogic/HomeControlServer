@@ -5,7 +5,7 @@ namespace HomeControlServer.Providers
 {
     public static class Logger
     {
-        private const string LOGFILE_STEM = @"c:\temp\homecontrol_log";
+        private const string LOGFILE_STEM = @"c:\HomeControl\Data\homecontrol_log";
         private const string LOGFILE_EXT = @".log";
         private const string LOGFILE = LOGFILE_STEM + LOGFILE_EXT;
         private const int MAXSIZE = 1000000;
