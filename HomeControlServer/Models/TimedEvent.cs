@@ -188,14 +188,14 @@ namespace HomeControlServer.Models
             set { ; }
         }
 
-        public bool IsActive(DateTime p_Time)
+        public bool IsActive(DateTime p_Time, int startPeriod = 0)
         {
             int iEventDays = 0;
             int iNowDay = 0;
 
-            if (p_Time == System.DateTime.MinValue)
+            if (p_Time == DateTime.MinValue)
             {
-                p_Time = System.DateTime.Now;
+                p_Time = DateTime.Now;
             }
             iNowDay = (int)p_Time.DayOfWeek;
             if (iNowDay == 0) iNowDay = 7; // move sunday to after saturday
@@ -212,23 +212,44 @@ namespace HomeControlServer.Models
                     return false;
                 }
                 // got this far so it's the right day
-                if (p_Time.TimeOfDay < timeStart.TimeOfDay | p_Time.TimeOfDay > timeEnd.TimeOfDay)
+                if (startPeriod == 0)
                 {
-                    return false;
+                    if (p_Time.TimeOfDay > timeStart.TimeOfDay && p_Time.TimeOfDay < timeEnd.TimeOfDay)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    DateTime laterTime = p_Time.AddSeconds(startPeriod);
+                    if (p_Time.TimeOfDay < timeStart.TimeOfDay && laterTime.TimeOfDay > timeStart.TimeOfDay)
+                    {
+                        return true;
+                    }
                 }
             }
             else
             {
                 // Fully specified datetime range
-                if (p_Time < timeStart)
+                if (startPeriod == 0)
                 {
-                    return false;
-                } else if (p_Time > timeEnd)
-                { // remove old event from list
-                    HeatingControl.events.Remove(this);
+                    if (p_Time > timeEnd)
+                    { // remove old event from list
+                        HeatingControl.events.Remove(this);
+                        return false;
+                    }
+                    if (p_Time > timeStart)
+                    {
+                        return true;
+                    }
+                    DateTime laterTime = p_Time.AddSeconds(startPeriod);
+                    if (p_Time < timeStart && laterTime > timeStart)
+                    {
+                        return true;
+                    }
                 }
             }
-            return true;
+            return false;
         }
 
         public bool IsPast(DateTime p_Time)

@@ -213,6 +213,8 @@
     <Compile Include="Controllers\EventsController.cs" />
     <Compile Include="Controllers\GroupsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\HeaterController.cs" />
+    <Compile Include="Controllers\StatusController.cs" />
     <Compile Include="Controllers\RoomsController.cs" />
     <Compile Include="Controllers\SensorsController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
@@ -225,6 +227,8 @@
     <Compile Include="Models\Globals.cs" />
     <Compile Include="Models\Heater.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\LiveEvent.cs" />
+    <Compile Include="Models\Status.cs" />
     <Compile Include="Providers\Logger.cs" />
     <Compile Include="Models\Relay.cs" />
     <Compile Include="Providers\RelayControl.cs" />

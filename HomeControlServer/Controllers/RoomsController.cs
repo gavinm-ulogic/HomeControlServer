@@ -7,6 +7,10 @@ namespace HomeControlServer.Controllers
 {
     public class RoomsController : ApiController
     {
+        [HttpOptions]
+        [Route("api/rooms/{id}")]
+        public void Options2() { }
+
         public IEnumerable<Room> GetAllRooms()
         {
             return HeatingControl.rooms;
@@ -21,5 +25,18 @@ namespace HomeControlServer.Controllers
             }
             return Ok(room);
         }
+
+        [Route("api/rooms/{id}")]
+        [HttpPut]
+        public IHttpActionResult UpdateRoom([FromBody] Room room)
+        {
+            var r = HeatingControl.GetRoom(room.id);
+            if (r != null)
+            {
+                r.name = room.name;
+            }
+            return Ok(room);
+        }
+
     }
 }

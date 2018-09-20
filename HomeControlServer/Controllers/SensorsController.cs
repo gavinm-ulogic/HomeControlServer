@@ -21,5 +21,23 @@ namespace HomeControlServer.Controllers
         //    }
         //    return Ok(sensor);
         //}
+
+        [HttpOptions]
+        [Route("api/sensors/{id}")]
+        public void Options2() { }
+
+        [Route("api/sensors/{id}")]
+        [HttpPut]
+        public IHttpActionResult UpdateSensor([FromBody] Sensor sensor)
+        {
+            var s = HeatingControl.GetSensor(sensor.id);
+            if (s != null)
+            {
+                s.name = sensor.name;
+            }
+            return Ok(sensor);
+        }
+
+
     }
 }

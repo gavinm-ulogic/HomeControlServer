@@ -183,6 +183,28 @@ namespace HomeControlServer.Providers
             return result;
         }
 
+        public static Sensor GetSensor(int id)
+        {
+            Sensor result = sensors.Find(
+            delegate (Sensor s)
+            {
+                return s.id == id;
+            });
+
+            return result;
+        }
+
+        public static Heater GetHeater(int id)
+        {
+            Heater result = heaters.Find(
+            delegate (Heater h)
+            {
+                return h.id == id;
+            });
+
+            return result;
+        }
+
         public static EventGroup GetGroupById(int id)
         {
             for (int i = 0; i < groups.Count; i++)
@@ -192,14 +214,14 @@ namespace HomeControlServer.Providers
             return null;
         }
 
-        public static Room GetRoomById(int id)
-        {
-            for (int i = 0; i < rooms.Count; i++)
-            {
-                if (rooms[i].id == id) return rooms[i];
-            }
-            return null;
-        }
+        //public static Room GetRoomById(int id)
+        //{
+        //    for (int i = 0; i < rooms.Count; i++)
+        //    {
+        //        if (rooms[i].id == id) return rooms[i];
+        //    }
+        //    return null;
+        //}
 
         public static Heater GetHeaterById(int id)
         {
@@ -208,6 +230,11 @@ namespace HomeControlServer.Providers
                 if (heaters[i].id == id) return heaters[i];
             }
             return null;
+        }
+
+        public static Relay GetRelayByAddress(string relayAddress)
+        {
+            return relays.Find(r => r.address == relayAddress);
         }
 
         public static TimedEvent GetEventById(int id)
@@ -255,17 +282,48 @@ namespace HomeControlServer.Providers
             return false;
         }
 
-        public static List<TimedEvent> getHeaterEvents(int heaterId)
+        public static Status GetStatus()
         {
-            List<TimedEvent> retList = new List<TimedEvent>();
-            foreach (TimedEvent timedEvent in events)
+            var status = new Status();
+            
+            foreach(TimedEvent te in HeatingControl.events)
             {
-                if (timedEvent.subjectId == heaterId)
+                if (te.IsActive(DateTime.MinValue))
                 {
-                    retList.Add(timedEvent);
+                    var le = new LiveEvent();
+                    le.timedEvent = te;
+                    le.heater = HeatingControl.GetHeaterById(te.subjectId);
+                    le.relay = HeatingControl.GetRelayByAddress(le.heater.relayAddress);
+                    status.liveEvents.Add(le);
+                }
+                else if (te.IsActive(DateTime.MinValue, Status.SOONTIME))
+                {
+                    var le = new LiveEvent();
+                    le.timedEvent = te;
+                    le.heater = HeatingControl.GetHeaterById(te.subjectId);
+                    le.relay = HeatingControl.GetRelayByAddress(le.heater.relayAddress);
+                    status.soonEvents.Add(le);
                 }
             }
-            return retList;
+
+            status.sensors = HeatingControl.sensors;
+
+            return status;
         }
+
+
+
+        //public static List<TimedEvent> getHeaterEvents(int heaterId)
+        //{
+        //    List<TimedEvent> retList = new List<TimedEvent>();
+        //    foreach (TimedEvent timedEvent in events)
+        //    {
+        //        if (timedEvent.subjectId == heaterId)
+        //        {
+        //            retList.Add(timedEvent);
+        //        }
+        //    }
+        //    return retList;
+        //}
     }
 }
