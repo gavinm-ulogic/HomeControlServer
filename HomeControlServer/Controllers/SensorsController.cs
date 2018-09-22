@@ -12,16 +12,6 @@ namespace HomeControlServer.Controllers
             return HeatingControl.sensors;
         }
 
-        //public IHttpActionResult GetSensor(int id)
-        //{
-        //    var sensor = HeatingControl.GetSensor(id);
-        //    if (sensor == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return Ok(sensor);
-        //}
-
         [HttpOptions]
         [Route("api/sensors/{id}")]
         public void Options2() { }
@@ -35,9 +25,8 @@ namespace HomeControlServer.Controllers
             {
                 s.name = sensor.name;
             }
+            //HeatingControl.Save();
             return Ok(sensor);
         }
-
-
     }
 }

@@ -37,6 +37,7 @@ namespace HomeControlServer.Controllers
                 {
                     return NotFound();
                 }
+                //HeatingControl.Save();
                 return Ok(timedEvent);
             }
         }
@@ -63,6 +64,7 @@ namespace HomeControlServer.Controllers
                 return NotFound();
             }
             localEvent.setData(timedEvent);
+            HeatingControl.Save();
             return Ok(timedEvent);
         }
 
@@ -71,6 +73,7 @@ namespace HomeControlServer.Controllers
         public IHttpActionResult DeleteEvent(int id)
         {
             HeatingControl.DeleteEvent(id);
+            HeatingControl.Save();
             return Ok();
         }
     }

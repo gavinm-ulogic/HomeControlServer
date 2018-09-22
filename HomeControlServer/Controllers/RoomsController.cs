@@ -35,6 +35,7 @@ namespace HomeControlServer.Controllers
             {
                 r.name = room.name;
             }
+            //HeatingControl.Save();
             return Ok(room);
         }
 

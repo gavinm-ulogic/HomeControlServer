@@ -12,16 +12,6 @@ namespace HomeControlServer.Controllers
             return HeatingControl.heaters;
         }
 
-        //public IHttpActionResult GetHeater(int id)
-        //{
-        //    var heater = HeatingControl.GetHeater(id);
-        //    if (heater == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return Ok(heater);
-        //}
-
         [HttpOptions]
         [Route("api/heaters/{id}")]
         public void Options2() { }
@@ -35,9 +25,8 @@ namespace HomeControlServer.Controllers
             {
                 h.name = heater.name;
             }
+            //HeatingControl.Save();
             return Ok(heater);
         }
-
-
     }
 }

@@ -10,8 +10,6 @@ namespace HomeControlServer.Models
         public const int NO_READING = -999;
         public const int MAX_VALID = 80;
         public const int MIN_VALID = -40;
-        //public const int SENSOR_TYPE_ROOM = 1;
-        //public const int SENSOR_TYPE_FLOOR = 2;
 
         private int m_iReading = NO_READING;
 
