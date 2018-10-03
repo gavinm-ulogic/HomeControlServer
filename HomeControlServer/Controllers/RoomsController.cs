@@ -34,6 +34,9 @@ namespace HomeControlServer.Controllers
             if (r != null)
             {
                 r.name = room.name;
+                r.tempTarget = room.tempTarget;
+                r.tempMin = room.tempMin;
+                r.tempMax = room.tempMax;
             }
             //HeatingControl.Save();
             return Ok(room);
