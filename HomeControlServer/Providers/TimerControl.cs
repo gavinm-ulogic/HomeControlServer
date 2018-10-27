@@ -87,6 +87,7 @@ namespace HomeControlServer.Providers
         {
             bool newState = false;
             bool foundProcessed = false;
+            Room room = HeatingControl.GetRoom(heater.roomId);
 
             int sensorTotal = 0;
             int sensorAverage = 0;
@@ -101,18 +102,18 @@ namespace HomeControlServer.Providers
             }
 
             sensorAverage = sensorTotal / sensorCount;
-            if (sensorAverage >= heater.tempMax) { return; }
+            if (sensorAverage >= room.tempMax) { return; }
             if (timedEvent.action == "timed")
             {
                 newState = true;
             }
             else if (timedEvent.action == "target")
             {
-                if (sensorAverage < heater.tempTarget + m_iTempDelta)
+                if (sensorAverage < room.tempTarget + m_iTempDelta)
                 {
                     newState = true;
                 }
-                else if (sensorAverage == heater.tempTarget + m_iTempDelta)
+                else if (sensorAverage == room.tempTarget + m_iTempDelta)
                 { // Keep relay in same state to avoid flip-flopping
                     newState = RelayControl.GetRelayState(heater.relayAddress);
                 }

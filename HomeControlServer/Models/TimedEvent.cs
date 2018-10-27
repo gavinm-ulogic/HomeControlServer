@@ -49,6 +49,7 @@ namespace HomeControlServer.Models
             this.timeStart = dataEvent.timeStart;
             this.timeEnd = dataEvent.timeEnd;
             this.timeEnd = dataEvent.timeEnd;
+            this.action = dataEvent.action;
 
             return true;
         }
