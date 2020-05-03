@@ -18,7 +18,8 @@ namespace HomeControlServer.Providers
         {
             if (Environment.Version.Major >= 4)
             {
-                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
+                //string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"..\Microsoft.NET\Framework\v2.0.50727");
+                string folder = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "libs");
                 folder = Path.GetFullPath(folder);
                 var dllFile = Path.Combine(folder, "vjsnativ.dll");
                 var loadResult = LoadLibrary(dllFile);

@@ -17,8 +17,8 @@ namespace HomeControlServer
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             HeatingControl.Load();
-            //SensorControl.Run();
-            //RelayControl.Initialise();
+            SensorControl.Run();
+            RelayControl.Initialise();
             TimerControl.Run();
         }
     }
