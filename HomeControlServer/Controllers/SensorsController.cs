@@ -9,7 +9,7 @@ namespace HomeControlServer.Controllers
     {
         public IEnumerable<Sensor> GetAllSensors()
         {
-            return HeatingControl.sensors;
+            return HeatingControl.GetAllSensors();
         }
 
         [HttpOptions]

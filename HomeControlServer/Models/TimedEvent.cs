@@ -4,14 +4,186 @@ using HomeControlServer.Providers;
 
 namespace HomeControlServer.Models
 {
+    public class TimedEventPeriod
+    {
+        private uint days;
+        private uint time;
+        private uint duration;
+        private string absoluteDate;
+
+        public string value {
+            get { return $"{days}-{time}-{duration}"; }
+        }
+
+        public TimedEventPeriod()
+        {
+        }
+
+        public TimedEventPeriod(string tep)
+        {
+            // format:  dayencode-secsincemidnight-durationinsecs
+            //          where dayencode is either 7 bit encode day of week 1=Mon, 2=Tue, 4=Wed ... 3=Mon & Tue, weekdays & weekend can be inferred
+            //          or dayencode is actual date e.g. 20201107 - 7th November 2020
+
+            var splitTep = tep.Split('-');
+            if (splitTep.Length != 3)
+            {
+                throw new Exception("Incorrect event period format");
+            }
+
+            var dateEncoded = UInt32.Parse(splitTep[0]);
+            if (dateEncoded > 127)
+            { // absolute date
+                throw new NotImplementedException();
+            }
+            else
+            {
+                days = dateEncoded;
+            }
+
+            time = UInt32.Parse(splitTep[1]);
+            duration = UInt32.Parse(splitTep[2]);
+        }
+
+
+        public string description
+        {
+            get
+            {
+                string retStr = "";
+                string daysStr = "";
+                string timeStr = "";
+                string periodStr = "";
+                if (absoluteDate != null)
+                {
+                    throw new NotImplementedException();
+                }
+                else
+                {// recuring event
+                    switch (days)
+                    {
+                        case 31:
+                            daysStr = "Week days";
+                            break;
+                        case 96:
+                            daysStr = "Weekend";
+                            break;
+                        case 127:
+                            daysStr = "All days";
+                            break;
+                        default:
+                            daysStr += ((days & 1) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Mon" : "");
+                            daysStr += ((days & 2) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Tue" : "");
+                            daysStr += ((days & 4) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Wed" : "");
+                            daysStr += ((days & 8) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Thu" : "");
+                            daysStr += ((days & 16) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Fri" : "");
+                            daysStr += ((days & 32) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Sat" : "");
+                            daysStr += ((days & 64) > 0 ? (daysStr.Length > 0 ? ", " : "") + "Sun" : "");
+                            break;
+                        }
+                    if (daysStr == "") daysStr = "No days";
+                    retStr += daysStr + " ";
+                }
+
+                var hours = time / 3600;
+                var mins = (time - hours * 3600) / 60;
+                var secs = time - hours * 3600 - mins * 60;
+
+                timeStr = $"{((uint)hours).ToString("D2")}:{((uint)mins).ToString("D2")}";
+                timeStr += secs > 0 ? $":{((uint)secs).ToString("D2")}" : "";
+
+                var periodMins = Math.Floor((decimal)duration / 60);
+                var periodSecs = duration - periodMins * 60;
+
+                periodStr = $"{((uint)periodMins).ToString()} mins";
+                periodStr += periodSecs > 0 ? $" {((uint)periodSecs).ToString()} secs" : "";
+
+                retStr += timeStr + " for " + periodStr;
+
+                return retStr;
+            }
+            set {; }
+        }
+
+        public bool isActive(DateTime refTime, int offsetSecs = 0)
+        {
+            if (refTime == null || refTime == DateTime.MinValue)
+            {
+                refTime = DateTime.Now;
+            }
+            if (offsetSecs > 0) refTime = refTime.AddSeconds(offsetSecs);
+
+            if (absoluteDate != null)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            { // Not a fully specified range - i.e. repeating event
+                var refDay = (int)refTime.DayOfWeek;
+                refDay--; // mon = 0;
+                if (refDay < 0) refDay = 6; // move sunday to after saturday
+                var refDayBin = (uint)Math.Pow(2, refDay);
+                var refTimeOfDay = refTime.TimeOfDay.Ticks / 10000000;
+
+                var nextDayPeriod = time + duration > 60 * 60 * 24 ? time + duration - 60 * 60 * 24 : 0; // will be > 0 for period that spans midnight
+
+                if (nextDayPeriod > 0)
+                { // need to check end of prev day & start of this day
+                    int prevDay = refDay - 1;
+                    if (prevDay < 0) prevDay = 0;
+                    int prevDayBin = (int)Math.Pow(2, prevDay);
+
+                    if ((prevDayBin & days) > 0 && refTimeOfDay >= time) return true; // between start prev day & midnight
+                    if ((refDayBin & days) > 0 && refTimeOfDay < nextDayPeriod) return true; // between start of day & end of period
+                }
+                else
+                {
+                    return (refDayBin & days) > 0 && refTimeOfDay >= time && refTimeOfDay < time + duration;
+                }
+            }
+
+            return false;
+        }
+
+        public bool isPast(DateTime refTime)
+        {
+            if (refTime == System.DateTime.MinValue)
+            {
+                refTime = System.DateTime.Now;
+            }
+
+            if (absoluteDate != null)
+            { // Fully specified datetime range
+                var startDate = new DateTime(Int32.Parse(absoluteDate.Substring(0, 4)), Int32.Parse(absoluteDate.Substring(4, 2)), Int32.Parse(absoluteDate.Substring(6, 2)));
+                var startTime = startDate.AddSeconds(time);
+                var endTime = startTime.AddSeconds(duration);
+                if (refTime < endTime)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // Repeating event 
+                return false;
+            }
+            return true;
+        }
+
+
+
+    }
+
+
     public class TimedEvent
     {
         private int m_iId = 0;
         private string m_sSubjectType = "";
         private int m_iSubjectId = 0;
-        private System.DateTime m_dTimeStart;
-        private System.DateTime m_dTimeEnd;
+        //private System.DateTime m_dTimeStart;
+        //private System.DateTime m_dTimeEnd;
         private string m_sAction = "off";       // off, timer (ignores sensors), target (uses sensors)
+        private TimedEventPeriod m_period;
 
         private bool m_bIsGroup = false;
 
@@ -19,37 +191,20 @@ namespace HomeControlServer.Models
         {
         }
 
-        public TimedEvent(int p_Id, int p_Type, string p_SubjectType, int p_SubjectId, string p_TimeStart, string p_TimeEnd, string p_Comment)
+        public TimedEvent(int p_Id, int p_Type, string p_SubjectType, int p_SubjectId, string p_Period, string p_Comment)
         {
             this.id = p_Id;
             this.subjectId = p_SubjectId;
             this.subjectType = p_SubjectType;
-            try
-            {
-                timeStart = System.DateTime.ParseExact(p_TimeStart, Globals.DATETIME_FORMAT, null);
-            }
-            catch (Exception ex)
-            {
-                timeStart = System.DateTime.MinValue;
-            }
-            try
-            {
-                timeEnd = System.DateTime.ParseExact(p_TimeEnd, Globals.DATETIME_FORMAT, null);
-            }
-            catch (Exception ex)
-            {
-                timeEnd = System.DateTime.MinValue;
-            }
+            this.period = p_Period;
         }
 
         public bool setData(TimedEvent dataEvent)
         {
             this.id = dataEvent.id;
             this.subjectId = dataEvent.subjectId;
-            this.timeStart = dataEvent.timeStart;
-            this.timeEnd = dataEvent.timeEnd;
-            this.timeEnd = dataEvent.timeEnd;
             this.action = dataEvent.action;
+            this.period = dataEvent.period;
 
             return true;
         }
@@ -78,29 +233,35 @@ namespace HomeControlServer.Models
             set { m_iSubjectId = value; }
         }
 
-        public System.DateTime timeStart
+        public string period
         {
-            get { return m_dTimeStart; }
-            set { m_dTimeStart = value; }
+            get { return m_period.value; }
+            set { m_period = new TimedEventPeriod(value); }
         }
 
-        public string timeStartStr
-        {
-            get { return m_dTimeStart.ToString(Globals.DATETIME_FORMAT); }
-            set { m_dTimeStart = System.DateTime.ParseExact(value, Globals.DATETIME_FORMAT, null); }
-        }
+        //public System.DateTime timeStart
+        //{
+        //    get { return m_dTimeStart; }
+        //    set { m_dTimeStart = value; }
+        //}
 
-        public System.DateTime timeEnd
-        {
-            get { return m_dTimeEnd; }
-            set { m_dTimeEnd = value; }
-        }
+        //public string timeStartStr
+        //{
+        //    get { return m_dTimeStart.ToString(Globals.DATETIME_FORMAT); }
+        //    set { m_dTimeStart = System.DateTime.ParseExact(value, Globals.DATETIME_FORMAT, null); }
+        //}
 
-        public string timeEndStr
-        {
-            get { return m_dTimeEnd.ToString(Globals.DATETIME_FORMAT); }
-            set { m_dTimeEnd = System.DateTime.ParseExact(value, Globals.DATETIME_FORMAT, null); }
-        }
+        //public System.DateTime timeEnd
+        //{
+        //    get { return m_dTimeEnd; }
+        //    set { m_dTimeEnd = value; }
+        //}
+
+        //public string timeEndStr
+        //{
+        //    get { return m_dTimeEnd.ToString(Globals.DATETIME_FORMAT); }
+        //    set { m_dTimeEnd = System.DateTime.ParseExact(value, Globals.DATETIME_FORMAT, null); }
+        //}
 
         public bool isGroup
         {
@@ -126,154 +287,19 @@ namespace HomeControlServer.Models
                         break;
                 }
 
-                string sDays = "";
-                if (timeStart.Year < 1000)
-                {// recuring event
-                    if (timeStart.Year == 31)
-                    {
-                        sDays = "Week days";
-                    }
-                    else if (timeStart.Year == 96)
-                    {
-                        sDays = "Weekend";
-                    }
-                    else if (timeStart.Year == 96)
-                    {
-                        sDays = "All days";
-                    }
-                    else
-                    {
-                        if ((timeStart.Year & 1) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Mon";
-                        }
-                        if ((timeStart.Year & 2) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Tue";
-                        }
-                        if ((timeStart.Year & 4) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Wed";
-                        }
-                        if ((timeStart.Year & 8) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Thu";
-                        }
-                        if ((timeStart.Year & 16) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Fri";
-                        }
-                        if ((timeStart.Year & 32) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Sat";
-                        }
-                        if ((timeStart.Year & 64) > 0)
-                        {
-                            if (sDays != "") sDays += ", ";
-                            sDays += "Sun";
-                        }
-                    }
-                    if (sDays == "") sDays = "No days";
-                    sReturn += sDays + " ";
-                }
-                sReturn += timeStart.ToString("t") + " to " + timeEnd.ToString("t");
-
-                return sReturn;
+                return sReturn + m_period.description;
             }
             set { ; }
         }
 
         public bool IsActive(DateTime p_Time, int startPeriod = 0)
         {
-            int iEventDays = 0;
-            int iNowDay = 0;
-
-            if (p_Time == DateTime.MinValue)
-            {
-                p_Time = DateTime.Now;
-            }
-            iNowDay = (int)p_Time.DayOfWeek;
-            if (iNowDay == 0) iNowDay = 7; // move sunday to after saturday
-            iNowDay--; // mon = 0;
-            int iNowDayBin = (int)Math.Pow(2, iNowDay);
-
-            if (timeStart.Year < 1000)
-            {
-                // Not a fully specified range - i.e. repeating event
-                iEventDays = timeStart.Year;
-
-                if ((iNowDayBin & iEventDays) == 0)
-                {
-                    return false;
-                }
-                // got this far so it's the right day
-                if (startPeriod == 0)
-                {
-                    if (p_Time.TimeOfDay > timeStart.TimeOfDay && p_Time.TimeOfDay < timeEnd.TimeOfDay)
-                    {
-                        return true;
-                    }
-                }
-                else
-                {
-                    DateTime laterTime = p_Time.AddSeconds(startPeriod);
-                    if (p_Time.TimeOfDay < timeStart.TimeOfDay && laterTime.TimeOfDay > timeStart.TimeOfDay)
-                    {
-                        return true;
-                    }
-                }
-            }
-            else
-            {
-                // Fully specified datetime range
-                if (startPeriod == 0)
-                {
-                    if (p_Time > timeEnd)
-                    { // remove old event from list
-                        HeatingControl.events.Remove(this);
-                        return false;
-                    }
-                    if (p_Time > timeStart)
-                    {
-                        return true;
-                    }
-                    DateTime laterTime = p_Time.AddSeconds(startPeriod);
-                    if (p_Time < timeStart && laterTime > timeStart)
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return m_period.isActive(p_Time, startPeriod);
         }
 
-        public bool IsPast(DateTime p_Time)
+        public bool IsPast(DateTime refTime)
         {
-            if (p_Time == System.DateTime.MinValue)
-            {
-                p_Time = System.DateTime.Now;
-            }
-
-            if (timeStart.Year < 1000)
-            {
-                // Repeating event 
-                return false;
-            }
-            else
-            {
-                // Fully specified datetime range
-                if (p_Time < timeEnd)
-                {
-                    return false;
-                }
-            }
-            return true;
+            return m_period.isPast(refTime);
         }
 
         public bool Save()

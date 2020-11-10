@@ -3,77 +3,115 @@ using System.IO;
 using System.Xml.Serialization;
 using HomeControlServer.Models;
 using System;
+using Newtonsoft.Json;
+using System.Timers;
+using Newtonsoft.Json.Serialization;
+using System.Reflection;
 
 namespace HomeControlServer.Providers
 {
+
+    public class ShouldSerializeContractResolver : DefaultContractResolver
+    {
+        public new static readonly ShouldSerializeContractResolver Instance = new ShouldSerializeContractResolver();
+
+        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+        {
+            JsonProperty property = base.CreateProperty(member, memberSerialization);
+
+            if (property.DeclaringType == typeof(Room) && (property.PropertyName == "heaters" || property.PropertyName == "sensors"))
+            {
+                property.ShouldSerialize =
+                    instance =>
+                    {
+                        return false;
+                    };
+            }
+
+            return property;
+        }
+    }
+
     public static class HeatingControl
     {
         private const string DATADIR = @"C:\HomeControl\Data\";
-        private const string CONTROLFILE = DATADIR + @"HeatingData.xml";
-        private const string CONTROLFILEALT = DATADIR + @"HeatingDataAlt.xml";
-        private const string CONTROLFILEFALLBACK = DATADIR + @"HeatingDataFallback.xml";
+        private const string CONTROLFILE = DATADIR + @"HeatingData.json";
+        private const string CONTROLFILEALT = DATADIR + @"HeatingDataAlt.json";
+        private const string CONTROLFILEFALLBACK = DATADIR + @"HeatingDataFallback.json";
 
         public class HeatingData
         {
-            public List<EventGroup> theGroups = new List<EventGroup>();
-            public List<Room> theRooms = new List<Room>();
-            public List<Heater> theHeaters = new List<Heater>();
-            public List<Sensor> theSensors = new List<Sensor>();
-            public List<TimedEvent> theEvents = new List<TimedEvent>();
-            public List<Relay> theRelays = new List<Relay>();
+            public List<EventGroup> groups = new List<EventGroup>();
+            public List<Room> rooms = new List<Room>();
+            public List<Heater> heaters = new List<Heater>();
+            public List<Sensor> sensors = new List<Sensor>();
+            public List<TimedEvent> events = new List<TimedEvent>();
+            public List<Relay> relays = new List<Relay>();
         }
 
-        public static List<EventGroup> groups {get {return theData.theGroups;} set {} }
-        public static List<Room> rooms { get { return theData.theRooms; } set { } }
-        public static List<Heater> heaters { get { return theData.theHeaters; } set { } }
-        public static List<Sensor> sensors { get { return theData.theSensors; } set { } }
-        public static List<TimedEvent> events { get { return theData.theEvents; } set { } }
-        public static List<Relay> relays { get { return theData.theRelays; } set { } }
-
-        public static HeatingData theData;
+        public static HeatingData heatingData;
 
         private static int highestEventId = 0;
 
-        public static bool HolidayMode = false;
-        public static bool FloorHeatActive = true;
-        public static bool TowelRadsActive = true;
-        
-        public static List<Room> GetAllRooms()
-        {
-            return rooms;
-        }
+        private static Timer altTimer = null;
+
+        //public static bool holidayMode = false;
+        //public static bool floorHeatActive = true;
+        //public static bool towelRadsActive = true;
+
+        public static DateTime? lastAltSave = null;
 
         public static bool Save()
         {
             try
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(HeatingData));
+                string saveJson = JsonConvert.SerializeObject(heatingData, Formatting.Indented,
+                    new JsonSerializerSettings { ContractResolver = new ShouldSerializeContractResolver() });
+                if (saveJson == null || saveJson == "") throw new Exception("Json conversion error");
                 using (TextWriter writer = new StreamWriter(CONTROLFILE))
                 {
-                    serializer.Serialize(writer, theData);
+                    writer.Write(saveJson);
                     writer.Close();
                 }
 
-                // check the file
-                XmlSerializer deserializer = new XmlSerializer(typeof(HeatingData));
-                using (TextReader reader = new StreamReader(CONTROLFILE))
+                if (altTimer == null)
                 {
-                    object obj = deserializer.Deserialize(reader);
-                    reader.Close();
+                    altTimer = new Timer(5000);
+                    altTimer.AutoReset = false;
+                    altTimer.Elapsed += SaveAlt;
                 }
 
-                // got this far so save the alt file
+                if (!altTimer.Enabled)
+                {
+                    altTimer.Enabled = true;
+                    altTimer.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(Logger.LOGLEVEL_ERROR, $"Failed to save data file - {CONTROLFILE} - {ex.Message}");
+            }
+            return true;
+        }
+
+        private static void SaveAlt(Object source, ElapsedEventArgs e)
+        {
+            altTimer.Enabled = false;
+            try
+            {
+                string saveJson = JsonConvert.SerializeObject(heatingData, Formatting.Indented,
+                    new JsonSerializerSettings { ContractResolver = new ShouldSerializeContractResolver() });
+                if (saveJson == null || saveJson == "") throw new Exception("Json conversion error");
                 using (TextWriter writer = new StreamWriter(CONTROLFILEALT))
                 {
-                    serializer.Serialize(writer, theData);
+                    writer.Write(saveJson);
                     writer.Close();
                 }
             }
             catch (Exception ex)
             {
-                Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to save data file - " + ex.Message);
+                Logger.Log(Logger.LOGLEVEL_ERROR, $"Failed to save data file - {CONTROLFILEALT} - {ex.Message}");
             }
-            return true;
         }
 
         public static bool Load()
@@ -82,13 +120,11 @@ namespace HomeControlServer.Providers
             Logger.Log(Logger.LOGLEVEL_INFO, "###############################################################################################");
             Logger.Log(Logger.LOGLEVEL_INFO, "About to load init data");
 
-            XmlSerializer deserializer = new XmlSerializer(typeof(HeatingData));
-            object obj = null;
             try
             {
                 using (TextReader reader = new StreamReader(CONTROLFILE))
                 {
-                    obj = deserializer.Deserialize(reader);
+                    heatingData = JsonConvert.DeserializeObject<HeatingData>(reader.ReadToEnd());
                     reader.Close();
                 }
             }
@@ -99,7 +135,7 @@ namespace HomeControlServer.Providers
                     Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load data file - trying alt file");
                     using (TextReader reader = new StreamReader(CONTROLFILEALT))
                     {
-                        obj = deserializer.Deserialize(reader);
+                        heatingData = JsonConvert.DeserializeObject<HeatingData>(reader.ReadToEnd());
                         reader.Close();
                     }
                 }
@@ -108,142 +144,93 @@ namespace HomeControlServer.Providers
                     Logger.Log(Logger.LOGLEVEL_ERROR, "Failed to load alt data file - trying fallback");
                     using (TextReader reader = new StreamReader(CONTROLFILEFALLBACK))
                     {
-                        obj = deserializer.Deserialize(reader);
+                        heatingData = JsonConvert.DeserializeObject<HeatingData>(reader.ReadToEnd());
                         reader.Close();
                     }
+
                 }
             }
-            theData = (HeatingData)obj;
+
             Logger.Log(Logger.LOGLEVEL_INFO, "Init data loaded");
 
-            if (theData == null)
+            if (heatingData == null)
             {
                 return false;
             }
 
-            // Add heaters to rooms
-            foreach (Heater heater in heaters)
+            heatingData.rooms.ForEach(r =>
             {
-                foreach (Room room in rooms)
-                {
-                    if (room.id == heater.roomId)
-                    {
-                        room.heaters.Add(heater);
-                        break;
-                    }
-                }
-            }
-
-            // Add sensors to rooms and heaters
-            foreach (Sensor sensor in sensors)
-            {
-                foreach (Room room in rooms)
-                {
-                    if (room.id == sensor.roomId)
-                    {
-                        room.sensors.Add(sensor);
-                        foreach (Heater heater in room.heaters)
-                        {// Add room sensor to heater
-                            if (sensor.type == "room") { heater.sensors.Add(sensor); }   
-                        }
-                        break;
-                    }
-                }
-            }
-
-            foreach (TimedEvent timedEvent in events)
-            {
-                timedEvent.subjectType = "heater";
-            }
+                var roomHeaters = heatingData.heaters.FindAll(h => h.roomId == r.id);
+                var roomSensors = heatingData.sensors.FindAll(s => s.roomId == r.id);
+                r.sensors = roomSensors;
+                roomHeaters.ForEach(rh => rh.sensors = roomSensors);
+                r.heaters = roomHeaters;
+            });
 
             // Clear and then populate relay set
-            Relay oRelay;
-            theData.theRelays.Clear();
-            foreach (Heater heater in heaters)
+            heatingData.relays.Clear();
+            heatingData.heaters.ForEach(h =>
             {
-                oRelay = new Relay(heater.name, heater.relayAddress);
-                theData.theRelays.Add(oRelay);
-            }
+                var heaterRelay = new Relay(h.name, h.relayAddress);
+                heatingData.relays.Add(heaterRelay);
 
-            theData.theRelays.Sort();
+            });
+
+            heatingData.relays.Sort();
 
             Logger.Log(Logger.LOGLEVEL_INFO, "Init data processed");
             Save();
             return true;
         }
 
+        public static List<Room> GetAllRooms()
+        {
+            return heatingData.rooms;
+        }
+
         public static Room GetRoom(int id)
         {
-            Room result = rooms.Find(
-            delegate(Room r)
-            {
-                return r.id == id;
-            });
+            return heatingData.rooms.Find(x => x.id == id);
+        }
 
-            return result;
+        public static List<Sensor> GetAllSensors()
+        {
+            return heatingData.sensors;
         }
 
         public static Sensor GetSensor(int id)
         {
-            Sensor result = sensors.Find(
-            delegate (Sensor s)
-            {
-                return s.id == id;
-            });
+            return heatingData.sensors.Find(x => x.id == id);
+        }
 
-            return result;
+        public static List<Heater> GetAllHeaters()
+        {
+            return heatingData.heaters;
         }
 
         public static Heater GetHeater(int id)
         {
-            Heater result = heaters.Find(
-            delegate (Heater h)
-            {
-                return h.id == id;
-            });
-
-            return result;
+            return heatingData.heaters.Find(x => x.id == id);
         }
 
-        public static EventGroup GetGroupById(int id)
+        public static List<Relay> GetAllRelays()
         {
-            for (int i = 0; i < groups.Count; i++)
-            {
-                if (groups[i].id == id) return groups[i];
-            }
-            return null;
-        }
-
-        //public static Room GetRoomById(int id)
-        //{
-        //    for (int i = 0; i < rooms.Count; i++)
-        //    {
-        //        if (rooms[i].id == id) return rooms[i];
-        //    }
-        //    return null;
-        //}
-
-        public static Heater GetHeaterById(int id)
-        {
-            for (int i = 0; i < heaters.Count; i++)
-            {
-                if (heaters[i].id == id) return heaters[i];
-            }
-            return null;
+            return heatingData.relays;
         }
 
         public static Relay GetRelayByAddress(string relayAddress)
         {
-            return relays.Find(r => r.address == relayAddress);
+            return heatingData.relays.Find(x => x.address == relayAddress);
         }
 
-        public static TimedEvent GetEventById(int id)
+        public static List<TimedEvent> GetAllEvents()
         {
-            for (int i = 0; i < events.Count; i++)
-            {
-                if (events[i].id == id) return events[i];
-            }
-            return null;
+            return heatingData.events;
+        }
+
+        public static TimedEvent GetEvent(int id)
+        {
+            return heatingData.events.Find(x => x.id == id);
         }
 
         public static TimedEvent AddEvent(TimedEvent timedEvent)
@@ -255,7 +242,7 @@ namespace HomeControlServer.Providers
             }
             else if (timedEvent.id > highestEventId) highestEventId = timedEvent.id;
 
-            events.Add(timedEvent);
+            heatingData.events.Add(timedEvent);
             return timedEvent;
         }
 
@@ -264,7 +251,7 @@ namespace HomeControlServer.Providers
             if (timedEvent.id != 0)
             {
                 if (timedEvent.id > highestEventId) highestEventId = timedEvent.id;
-                TimedEvent anEvent = GetEventById(timedEvent.id);
+                TimedEvent anEvent = GetEvent(timedEvent.id);
                 if (anEvent != null) anEvent.setData(timedEvent);
                 return timedEvent;
             }
@@ -275,8 +262,8 @@ namespace HomeControlServer.Providers
         {
             if (timedEventId != 0)
             {
-                TimedEvent anEvent = GetEventById(timedEventId);
-                if (anEvent != null) events.Remove(anEvent);
+                TimedEvent anEvent = GetEvent(timedEventId);
+                if (anEvent != null) heatingData.events.Remove(anEvent);
                 return true;
             }
             return false;
@@ -286,13 +273,13 @@ namespace HomeControlServer.Providers
         {
             var status = new Status();
             
-            foreach(TimedEvent te in HeatingControl.events)
+            foreach(TimedEvent te in heatingData.events)
             {
                 if (te.IsActive(DateTime.MinValue))
                 {
                     var le = new LiveEvent();
                     le.timedEvent = te;
-                    le.heater = HeatingControl.GetHeaterById(te.subjectId);
+                    le.heater = HeatingControl.GetHeater(te.subjectId);
                     le.relay = HeatingControl.GetRelayByAddress(le.heater.relayAddress);
                     status.liveEvents.Add(le);
                 }
@@ -300,13 +287,13 @@ namespace HomeControlServer.Providers
                 {
                     var le = new LiveEvent();
                     le.timedEvent = te;
-                    le.heater = HeatingControl.GetHeaterById(te.subjectId);
+                    le.heater = HeatingControl.GetHeater(te.subjectId);
                     le.relay = HeatingControl.GetRelayByAddress(le.heater.relayAddress);
                     status.soonEvents.Add(le);
                 }
             }
 
-            status.sensors = HeatingControl.sensors;
+            status.sensors = heatingData.sensors;
 
             return status;
         }

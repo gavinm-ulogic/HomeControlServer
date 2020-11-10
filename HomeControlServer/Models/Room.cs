@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace HomeControlServer.Models
@@ -12,9 +13,8 @@ namespace HomeControlServer.Models
         public int tempMax { get; set; }
         public int tempTarget { get; set; }
 
-        [XmlIgnoreAttribute]
         public List<Sensor> sensors = new List<Sensor>();
-        [XmlIgnoreAttribute]
+
         public List<Heater> heaters = new List<Heater>();
         //public List<TimedEvent> TimedEvents = new List<TimedEvent>();
 
