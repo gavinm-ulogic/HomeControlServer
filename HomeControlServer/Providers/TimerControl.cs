@@ -101,14 +101,19 @@ namespace HomeControlServer.Providers
                 }
             }
 
-            sensorAverage = sensorTotal / sensorCount;
-            if (sensorAverage >= room.tempMax) { return; }
+            if (sensorCount > 0)
+            {
+                sensorAverage = sensorTotal / sensorCount;
+                if (sensorAverage >= room.tempMax) { return; }
+            }
+
             if (timedEvent.action == "timed")
             {
                 newState = true;
             }
             else if (timedEvent.action == "target")
             {
+                if (sensorCount == 0) { return; }
                 if (sensorAverage < room.tempTarget + m_iTempDelta)
                 {
                     newState = true;
