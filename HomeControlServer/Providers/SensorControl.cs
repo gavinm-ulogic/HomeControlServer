@@ -177,7 +177,7 @@ namespace HomeControlServer.Providers
         private static void SetValue(String p_SensorId, int p_Value)
         {
             bool bFound = false;
-            foreach (Sensor sensor in HeatingControl.sensors)
+            foreach (Sensor sensor in HeatingControl.GetAllSensors())
             {
                 if (sensor.sensorId == p_SensorId)
                 {
@@ -201,9 +201,10 @@ namespace HomeControlServer.Providers
 
         public static int GetValue(string p_SensorId)
         {
-            for (int i = 0; i < HeatingControl.sensors.Count; i++)
+            var sensorList = HeatingControl.GetAllSensors();
+            for (int i = 0; i < sensorList.Count; i++)
             {
-                if (HeatingControl.sensors[i].sensorId == p_SensorId) { return HeatingControl.sensors[i].reading; }
+                if (sensorList[i].sensorId == p_SensorId) { return sensorList[i].reading; }
             }
             return Sensor.NO_READING;
         }

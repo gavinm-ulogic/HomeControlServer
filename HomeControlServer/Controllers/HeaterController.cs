@@ -9,7 +9,7 @@ namespace HomeControlServer.Controllers
     {
         public IEnumerable<Heater> GetAllHeaters()
         {
-            return HeatingControl.heaters;
+            return HeatingControl.GetAllHeaters();
         }
 
         [HttpOptions]

@@ -19,7 +19,7 @@ namespace HomeControlServer.Controllers
         [Route("api/events")]
         public IEnumerable<TimedEvent> GetAllEvents()
         {
-            return HeatingControl.events;
+            return HeatingControl.GetAllEvents();
         }
 
         [HttpPost]
@@ -46,7 +46,7 @@ namespace HomeControlServer.Controllers
         [Route("api/events/{id}")]
         public IHttpActionResult GetEvents(int id)
         {
-            var timedEvent = HeatingControl.GetEventById(id);
+            var timedEvent = HeatingControl.GetEvent(id);
             if (timedEvent == null)
             {
                 return NotFound();
@@ -58,7 +58,7 @@ namespace HomeControlServer.Controllers
         [Route("api/events/{id}")]
         public IHttpActionResult PutEvents(int id, [FromBody] TimedEvent timedEvent)
         {
-            var localEvent = HeatingControl.GetEventById(id);
+            var localEvent = HeatingControl.GetEvent(id);
             if (timedEvent == null)
             {
                 return NotFound();

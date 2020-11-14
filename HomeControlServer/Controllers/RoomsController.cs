@@ -13,7 +13,7 @@ namespace HomeControlServer.Controllers
 
         public IEnumerable<Room> GetAllRooms()
         {
-            return HeatingControl.rooms;
+            return HeatingControl.GetAllRooms();
         }
 
         public IHttpActionResult GetRooms(int id)

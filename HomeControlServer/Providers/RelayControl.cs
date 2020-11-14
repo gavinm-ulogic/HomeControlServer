@@ -165,9 +165,9 @@ namespace HomeControlServer.Providers
 
                 // Test
                 SetAllOff();
-                SetOn(1, 7);
+                SetOn(2, 7);
                 sleep(1000);
-                SetOff(1, 7);
+                SetOff(2, 7);
 
                 //for (i = 1; i <= 3; i++)
                 //{

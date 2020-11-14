@@ -59,16 +59,16 @@ namespace HomeControlServer.Providers
             try
             {
                 RelayControl.ResetAllSetupRelays();
-                foreach (TimedEvent timedEvent in HeatingControl.events)
+                foreach (TimedEvent timedEvent in HeatingControl.GetAllEvents())
                 {
                     if (timedEvent.IsActive(DateTime.MinValue)) {
                         switch (timedEvent.subjectType)
                         {
                             case "heater":
-                                Heater heater = HeatingControl.GetHeaterById(timedEvent.subjectId);
+                                Heater heater = HeatingControl.GetHeater(timedEvent.subjectId);
                                 if (heater == null) { break; }
                                 Logger.Log(Logger.LOGLEVEL_INFO, "Active timed event: heater: " + heater.name + ", relay: " + heater.relayAddress + 
-                                    ", from " + timedEvent.timeStart.ToString("H:mm") + " to " + timedEvent.timeEnd.ToString("H:mm"));
+                                    ", event: " + timedEvent.description);
 
                                 ProcessHeaterEvent(heater, timedEvent);
                                 break;
@@ -101,14 +101,19 @@ namespace HomeControlServer.Providers
                 }
             }
 
-            sensorAverage = sensorTotal / sensorCount;
-            if (sensorAverage >= room.tempMax) { return; }
+            if (sensorCount > 0)
+            {
+                sensorAverage = sensorTotal / sensorCount;
+                if (sensorAverage >= room.tempMax) { return; }
+            }
+
             if (timedEvent.action == "timed")
             {
                 newState = true;
             }
             else if (timedEvent.action == "target")
             {
+                if (sensorCount == 0) { return; }
                 if (sensorAverage < room.tempTarget + m_iTempDelta)
                 {
                     newState = true;

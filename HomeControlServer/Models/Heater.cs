@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using HomeControlServer.Providers;
 using System.Xml.Serialization;
+using Newtonsoft.Json;
 
 namespace HomeControlServer.Models
 {
@@ -8,6 +9,7 @@ namespace HomeControlServer.Models
     public class Heater
     {
         [XmlIgnoreAttribute]
+        [JsonIgnore]
         public List<Sensor> sensors = new List<Sensor>();
 
         public int id { get; set; }
